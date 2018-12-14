@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Bike; 
 use Validator;
+use App\Http\Resources\BikesResource;
 
 class BikeController extends Controller
 {
@@ -109,19 +110,16 @@ class BikeController extends Controller
         }
 
         // // Creating a record in a different way
-        // $createBike = Bike::create([
-        //     'user_id' => $request->user()->id,
-        //     'make' => $request->make,
-        //     'model' => $request->model,
-        //     'year' => $request->year,
-        //     'mods' => $request->mods,
-        //     'picture' => $request->picture,
-        // ]);
+        $createBike = Bike::create([
+            'user_id' => $request->user()->id,
+            'make' => $request->make,
+            'model' => $request->model,
+            'year' => $request->year,
+            'mods' => $request->mods,
+            'picture' => $request->picture,
+        ]);
 
-        // return new BikesResource($createBike);
-
-        $createBike = Bike::create($request->all());
-        return $createBike;
+        return new BikesResource($createBike);
     }
 
     /**
@@ -161,9 +159,12 @@ class BikeController extends Controller
      */
     public function show($id)
     {
-        $showBikeById = Bike::with(['items', 'builder', 'garages'])->findOrFail($id);
-        return $showBikeById;
-        // return new BikesResource($bike);
+        // tanpa menggunakan fitur resource
+        // $showBikeById = Bike::with(['items', 'builder', 'garages'])->findOrFail($id);
+        // return $showBikeById;
+
+        // menggunakan fitur resource
+        return new BikesResource($bike);
     }
 
     /**
@@ -220,28 +221,29 @@ class BikeController extends Controller
     public function update(Request $request, Bike $bike)
     {
         // check if currently authenticated user is the bike owner
-        // if ($request->user()->id !== $bike->user_id) {
-        //     return response()->json(['error' => 'You can only edit your own bike.'], 403);
-        // }
-
-        // $bike->update($request->only(['make', 'model', 'year', 'mods', 'picture']));
-
-        // return new BikesResource($bike);
-
-        $validator = Validator::make($request->all(), [
-            'make' => 'required',
-            'model' => 'required',
-            'year'=> 'required',
-            'mods'=> 'required',
-            'builder_id' => 'required'
-        ]);
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+        if ($request->user()->id !== $bike->user_id) {
+            return response()->json(['error' => 'You can only edit your own bike.'], 403);
         }
 
-        $updateBikeById = Bike::findOrFail($id);
-        $updateBikeById->update($request->all());
-        return $updateBikeById;
+        $bike->update($request->only(['make', 'model', 'year', 'mods', 'picture']));
+        return new BikesResource($bike);
+
+        // Tanpa fitur Resource
+        // $validator = Validator::make($request->all(), [
+        //     'make' => 'required',
+        //     'model' => 'required',
+        //     'year'=> 'required',
+        //     'mods'=> 'required',
+        //     'builder_id' => 'required'
+        // ]);
+
+        // if ($validator->fails()) {
+        //     return response()->json($validator->errors(), 422);
+        // }
+
+        // $updateBikeById = Bike::findOrFail($id);
+        // $updateBikeById->update($request->all());
+        // return $updateBikeById;
     }
 
     /**
